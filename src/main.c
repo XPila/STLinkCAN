@@ -51,8 +51,6 @@ int main(int argc, char** argv)
 //			.mask = 0x07f, // canopen nodeid 0x01
 			.id = 0x000,   // all messages
 			.mask = 0x000, // all messages
-			.ext = 0,
-			.rtr = 0,
 			.enabled = 1,
 		};
 
@@ -64,11 +62,12 @@ int main(int argc, char** argv)
 #endif // _WIN32
 
 		int i = 0;
+		int id = 0;
 		while (1)
 		{
-#ifdef LOOPBACK
+#ifndef LOOPBACK
 			// transmit any message in loopbackmode
-			can_msg_t txmsg = { .id = 0x701, .dl = 8, .data = {1,2,3,4,5,6,7,8} };
+			can_msg_t txmsg = { .id = id, .rtr = 1, .dl = 8, .data = {1,2,3,4,5,6,7,8} };
 			can_tx_msg(&txmsg);
 #endif // LOOPBACK
 
@@ -88,10 +87,15 @@ int main(int argc, char** argv)
 			{
 				// trace message
 				printf("%08x ID=0x%03x dl=%d", i, msg.id, msg.dl);
-				for (int j = 0; j < msg.dl; j++)
-					printf(" %02x", msg.data[j]);
+				if (msg.ide)
+					printf(" IDE");
+				if (msg.rtr)
+					printf(" RTR");
+				else
+					for (int j = 0; j < msg.dl; j++)
+						printf(" %02x", msg.data[j]);
 				printf("\n");
-//				fflush(stdout);
+				fflush(stdout);
 			}
 			else
 			{
@@ -109,6 +113,9 @@ int main(int argc, char** argv)
 				}
 			}
 			i++;
+			id++;
+			if (id > 0x7ff)
+				id = 0;
 		}
 		can_stop(); // stop reception
 		can_done(); // shutdown

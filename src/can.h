@@ -28,7 +28,7 @@ typedef enum _can_mode_t
 typedef struct _can_msg_t
 {
 	uint32_t id:32;
-	uint8_t ext:1;
+	uint8_t ide:1;
 	uint8_t rtr:1;
 	uint8_t dl:4;
 	uint8_t :2;
@@ -40,15 +40,18 @@ typedef struct _can_filter_mask32_t
 	uint8_t fifo;   // 0-1
 	uint32_t id;    // 0x000-0x7ff
 	uint32_t mask;  // 0x000-0x7ff
-	uint8_t ext;    // 0-1
-	uint8_t rtr;    // 0-1
 	uint8_t enabled;// 0-1
 } can_filter_mask32_t;
+
+typedef void (can_rx_msg_cb_t)(can_msg_t* pmsg);
 
 
 #ifdef __cplusplus
 extern "C" {
 #endif //__cplusplus
+
+
+extern can_rx_msg_cb_t* can_rx_msg_cb;
 
 
 extern can_res_t can_init(can_mode_t mode, uint32_t baudrate);

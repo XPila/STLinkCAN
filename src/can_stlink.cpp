@@ -11,6 +11,9 @@ extern STLinkInterface* g_pstlink;
 extern Brg* g_pbridge;
 
 
+can_rx_msg_cb_t* can_rx_msg_cb = 0;
+
+
 can_res_t can_init(can_mode_t mode, uint32_t baudrate)
 {
 	stlink_init(NULL);
@@ -78,11 +81,11 @@ can_res_t can_set_filter_mask32(uint8_t bank, can_filter_mask32_t* pf)
 	filter_conf.FilterMode = CAN_FILTER_ID_MASK;
 	filter_conf.FilterScale = CAN_FILTER_32BIT;
 	filter_conf.Id[0].ID = pf->id;
-	filter_conf.Id[0].IDE = (pf->ext)?CAN_ID_EXTENDED:CAN_ID_STANDARD;
-	filter_conf.Id[0].RTR = (pf->rtr)?CAN_REMOTE_FRAME:CAN_DATA_FRAME;
+	filter_conf.Id[0].IDE = CAN_ID_STANDARD; // ignored
+	filter_conf.Id[0].RTR = CAN_DATA_FRAME; // ignored
 	filter_conf.Mask[0].ID = pf->mask;
-	filter_conf.Mask[0].IDE = (pf->ext)?CAN_ID_EXTENDED:CAN_ID_STANDARD;
-	filter_conf.Mask[0].RTR = (pf->rtr)?CAN_REMOTE_FRAME:CAN_DATA_FRAME;
+	filter_conf.Mask[0].IDE = CAN_ID_STANDARD; // ignored
+	filter_conf.Mask[0].RTR = CAN_DATA_FRAME; // ignored
 	Brg_StatusT bridge_status = g_pbridge->InitFilterCAN(&filter_conf);
 	if (bridge_status != BRG_NO_ERR)
 	{
@@ -124,7 +127,7 @@ can_res_t can_tx_msg(can_msg_t* pmsg)
 		return can_ERR_NOT_INIT;
 	Brg_CanTxMsgT can_msg =
 	{
-		.IDE = pmsg->ext?CAN_ID_EXTENDED:CAN_ID_STANDARD,
+		.IDE = pmsg->ide?CAN_ID_EXTENDED:CAN_ID_STANDARD,
 		.ID = pmsg->id,
 		.RTR = pmsg->rtr?CAN_REMOTE_FRAME:CAN_DATA_FRAME,
 		.DLC = pmsg->dl,
@@ -152,8 +155,8 @@ can_res_t can_rx_msg(can_msg_t* pmsg)
 		if (pmsg)
 		{
 			pmsg->id = can_msg.ID;
-			pmsg->ext = can_msg.IDE;
-			pmsg->rtr = can_msg.RTR;
+			pmsg->ide = (can_msg.IDE != CAN_ID_STANDARD)?1:0;
+			pmsg->rtr = (can_msg.RTR != CAN_DATA_FRAME)?1:0;
 			pmsg->dl = data_size;
 			memcpy(pmsg->data, data, data_size);
 		}
